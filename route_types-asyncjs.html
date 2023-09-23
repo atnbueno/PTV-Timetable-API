@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PTV API Request - native asynchronous JS example</title>
+</head>
+<body style="margin: 1vw">
+    <label for="url">URL:</label>
+    <input type="text" id="url" style="width: 98vw" readonly>
+    <br>
+    <label for="response">RESPONSE:</label>
+    <textarea id="response" style="width: 98vw; min-height: 80vh;" readonly></textarea>
+
+    <script>
+        async function getURL(endpoint) {
+            const devId = 3054321; // replace with your User Id
+            const apiKey = '2b7df1de-3d95-2507-0abd-045b563799dd'; // replace with your API Key
+    
+            const pathname = `${endpoint}${endpoint.includes('?') ? '&' : '?'}devid=${devId}`;
+
+            const encoder = new TextEncoder();
+            const keyBytes = encoder.encode(apiKey);
+            const dataBytes = encoder.encode(pathname);
+
+            const hmacKey = await crypto.subtle.importKey("raw", keyBytes, { name: "HMAC", hash: { name: "SHA-1" } }, false, ["sign"]);
+            const signatureArray = Array.from(new Uint8Array(await crypto.subtle.sign("HMAC", hmacKey, dataBytes)));
+            const signature = signatureArray.map(byte => byte.toString(16).padStart(2, '0')).join('');
+            
+            return `https://timetableapi.ptv.vic.gov.au${pathname}&signature=${signature}`;
+        }
+
+        (async () => {
+            const url = await getURL('/v3/route_types');
+            document.getElementById('url').value = url;
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                document.getElementById('response').value = JSON.stringify(data, null, 4);
+            } catch (error) {
+                document.getElementById('response').value = "ERROR: Failed to retrieve data from the URL";
+            }
+        })();
+    </script>
+</body>
+</html>

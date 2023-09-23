@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>PTV API Request - synchronous JS example (using jsSHA)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsSHA/3.3.1/sha1.min.js"></script>
+</head>
+
+<body style="margin: 1vw">
+    <label for="url">URL:</label>
+    <input type="text" id="url" style="width: 98vw" readonly>
+    <br>
+    <label for="response">RESPONSE:</label>
+    <textarea id="response" style="width: 98vw; min-height: 80vh;" readonly></textarea>
+
+    <script>
+        function getURL(endpoint) {
+            const devId = 3054321; // replace with your User Id
+            const apiKey = '2b7df1de-3d95-2507-0abd-045b563799dd'; // replace with your API Key
+
+            const pathname = `${endpoint}${endpoint.includes('?') ? '&' : '?'}devid=${devId}`;
+
+            const hash = new jsSHA('SHA-1', 'TEXT', { hmacKey: { value: apiKey, format: 'TEXT' } });
+            const signature = hash.update(pathname).getHash('HEX');
+            return `https://timetableapi.ptv.vic.gov.au${pathname}&signature=${signature}`;
+        }
+
+        const url = getURL('/v3/route_types');
+        document.getElementById('url').value = url;
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', url, false); // Third parameter is 'false' for synchronous request
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    const data = JSON.parse(xhr.responseText);
+                    document.getElementById('response').value = JSON.stringify(data, null, 4);
+                } else {
+                    document.getElementById('response').value = 'ERROR: Failed to retrieve data from the URL';
+                }
+            }
+        };
+        xhr.send();
+    </script>
+</body>
+
+</html>
